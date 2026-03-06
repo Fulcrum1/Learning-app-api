@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,8 +26,13 @@ func main() {
 
 	router.Use(gin.Logger())
 	// router.Use(cors.Default())
+	allowedOrigins := []string{"http://localhost:3000"}
+	if prodOrigin := os.Getenv("ALLOWED_ORIGIN"); prodOrigin != "" {
+		allowedOrigins = append(allowedOrigins, prodOrigin)
+	}
+
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -107,7 +113,9 @@ func main() {
 	protected.POST("/card/progress-card/:id", controller.ProgressCard)
 	protected.POST("/card/rollback-progress-card", controller.RollbackProgressCard)
 
-	// Start server on port 8080 (default)
-	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)
-	router.Run()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	router.Run(":" + port)
 }
